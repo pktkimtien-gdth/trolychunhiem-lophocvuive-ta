@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, useEffect } from 'react';
 import {
   Student,
   DeskPosition,
@@ -189,7 +189,35 @@ const ClassroomBridge: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const gamificationSlice = useGamification();
   const timetableSlice = useTimetable();
   const mediaSlice = useMedia();
+// TỰ ĐỘNG KÉO DỮ LIỆU TỪ SUPABASE
+  useEffect(() => {
+    const fetchStudentsFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('trolychunhiem_lophocvuive')
+          .select('ten_hoc_sinh');
+        
+        if (error) {
+          console.error('Lỗi khi tải dữ liệu Supabase:', error);
+          return;
+        }
 
+        if (data && data.length > 0) {
+          // Chuyển đổi dữ liệu từ Supabase sang định dạng của ứng dụng
+          const newRoster = data.map((row: any) => ({
+            name: row.ten_hoc_sinh
+          }));
+          // Thay thế danh sách mặc định bằng danh sách từ Supabase
+          studentsSlice.importRealStudents(newRoster, 'replace');
+        }
+      } catch (err) {
+        console.error('Lỗi kết nối Supabase:', err);
+      }
+    };
+
+    fetchStudentsFromSupabase();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi ứng dụng tải xong
   // Cross-domain bridge handlers
   const handleRedeemGift = useCallback((gift: GiftItem) => {
     const studentCoins = auth.currentStudent?.coins ?? 0;
