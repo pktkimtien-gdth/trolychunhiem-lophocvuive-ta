@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8fafc;
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Vibrant animations for elementary classroom */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
+  }
+}
+
+@keyframes rainbow-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.rainbow-gradient {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 30%, #ec4899 65%, #f59e0b 100%);
+  background-size: 200% 200%;
+  animation: rainbow-shimmer 6s ease infinite;
+}
+
+/* Custom Scrollbar for elementary aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

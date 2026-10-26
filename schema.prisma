@@ -1,0 +1,267 @@
+// Prisma Schema for Production PostgreSQL Database
+// Architecture: Learning Management & Gamification Platform (LMS)
+// Designed for role-based security, relational integrity, and anti-IDOR enforcement
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum TaskStudentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+  NEEDS_REVISION
+  LATE
+}
+
+enum AssignmentType {
+  INTERACTIVE_QUIZ
+  EXTERNAL_LINK
+  SHORT_ESSAY
+  PRACTICE_STEP
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GiftCategory {
+  DUNG_CU
+  DAC_QUYEN
+  HUY_HIEU
+  DO_CHOI
+}
+
+enum RedemptionStatus {
+  PENDING
+  DELIVERED
+}
+
+// 1. User & Admin Model with bcrypt hashed PINs/passwords
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  passwordHash String    @map("password_hash") // bcrypt hash
+  role         Role      @default(STUDENT)
+  name         String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // 1-1 relation if the user is a student
+  student      Student?
+
+  @@map("users")
+}
+
+// 2. Student Model
+model Student {
+  id               String            @id @default(uuid())
+  userId           String?           @unique @map("user_id")
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name             String
+  gender           Gender            @default(MALE)
+  studentCode      String            @unique @map("student_code") // e.g. HS5B2-01
+  avatar           String
+  coins            Int               @default(0)
+  stars            Int               @default(0)
+  group            String            @default("Tổ 1") // Tổ 1, Tổ 2, Tổ 3, Tổ 4
+  row              Int               @default(1)
+  col              Int               @default(1)
+  deskId           String?           @map("desk_id")
+  attendanceStatus AttendanceStatus  @default(PRESENT) @map("attendance_status")
+  badges           String[]          @default([])
+  notes            String?
+  parentPinHash    String?           @map("parent_pin_hash") // bcrypt hashed PIN for parent
+  teacherComments  String?           @map("teacher_comments")
+  academicScores   Json?             @map("academic_scores") // e.g. {"Toan": 9.5, "TiengViet": 9.0}
+  reminderNotes    String[]          @default([]) @map("reminder_notes")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  taskRecords      StudentTaskRecord[]
+  submissions      Submission[]
+  redemptions      RedemptionRecord[]
+  rewardHistories  RewardHistory[]
+
+  @@index([group])
+  @@index([studentCode])
+  @@map("students")
+}
+
+// 3. Task Model (ClassTask)
+model Task {
+  id                 String             @id @default(uuid())
+  title              String
+  subject            String             // GDPT 2018: Toán, Tiếng Việt, Khoa học, v.v.
+  description        String             @db.Text
+  assignedDate       DateTime           @map("assigned_date")
+  dueDate            DateTime           @map("due_date")
+  assignedToType     String             @default("all") @map("assigned_to_type") // 'all' | 'group' | 'custom'
+  assignedGroup      String?            @map("assigned_group") // 'Tổ 1' | 'Tổ 2' ...
+  assignedStudentIds String[]           @default([]) @map("assigned_student_ids")
+  priority           Priority           @default(MEDIUM)
+  criteria           String?
+  rewardCoins        Int                @default(10) @map("reward_coins")
+  week               String?            // "Tuần 24"
+  taskType           AssignmentType     @default(INTERACTIVE_QUIZ) @map("task_type")
+  questions          Json?              // InteractiveTaskQuestion array
+  externalUrl        String?            @map("external_url")
+  attachmentUrl      String?            @map("attachment_url")
+  attachmentName     String?            @map("attachment_name")
+  isDraft            Boolean            @default(false) @map("is_draft")
+  isClosed           Boolean            @default(false) @map("is_closed")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  studentRecords     StudentTaskRecord[]
+
+  @@index([subject])
+  @@index([week])
+  @@map("tasks")
+}
+
+// Relational Task Record per student to prevent IDOR and race conditions
+model StudentTaskRecord {
+  id                    String            @id @default(uuid())
+  taskId                String            @map("task_id")
+  task                  Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  studentId             String            @map("student_id")
+  student               Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status                TaskStudentStatus @default(NOT_STARTED)
+  score                 Float?
+  note                  String?
+  submittedAt           DateTime?         @map("submitted_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  answers               Json?             // Form answers / quiz responses
+  attemptsCount         Int               @default(0) @map("attempts_count")
+  selfDeclaredCompleted Boolean           @default(false) @map("self_declared_completed")
+  selfDeclaredNote      String?           @map("self_declared_note")
+  teacherVerified       Boolean           @default(false) @map("teacher_verified")
+
+  @@unique([taskId, studentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("student_task_records")
+}
+
+// 4. Worksheet Model
+model Worksheet {
+  id             String       @id @default(uuid())
+  title          String
+  subject        String       // Toán, Tiếng Việt, Tiếng Anh...
+  grade          String       @default("Lớp 5")
+  type           String       @default("direct") // 'direct' | 'external_link'
+  externalUrl    String?      @map("external_url")
+  provider       String?      // 'quizizz' | 'wordwall' | 'forms' | 'other'
+  description    String       @db.Text
+  questions      Json?        // Array of Question: { id, question, options, answerIndex, explanation }
+  rewardCoins    Int          @default(10) @map("reward_coins")
+  minPassPercent Int          @default(80) @map("min_pass_percent")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  submissions    Submission[]
+
+  @@index([subject])
+  @@map("worksheets")
+}
+
+// Worksheet Submissions for grading and auto coin rewards
+model Submission {
+  id             String    @id @default(uuid())
+  studentId      String    @map("student_id")
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  worksheetId    String    @map("worksheet_id")
+  worksheet      Worksheet @relation(fields: [worksheetId], references: [id], onDelete: Cascade)
+  worksheetTitle String    @map("worksheet_title")
+  subject        String
+  score          Int
+  totalQuestions Int       @map("total_questions")
+  percent        Float
+  isPassed       Boolean   @map("is_passed")
+  coinsEarned    Int       @default(0) @map("coins_earned")
+  answers        Json      // Student selected answers { q1: 1, q2: 0 }
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@index([worksheetId])
+  @@map("submissions")
+}
+
+// 5. Gift Model
+model Gift {
+  id            String       @id @default(uuid())
+  name          String
+  category      GiftCategory @default(DUNG_CU)
+  coinsRequired Int          @map("coins_required")
+  icon          String       // Lucide icon name or emoji
+  imageColor    String       @default("from-amber-400 to-orange-500") @map("image_color")
+  stock         Int          @default(10)
+  description   String       @db.Text
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  redemptions   RedemptionRecord[]
+
+  @@map("gifts")
+}
+
+// Gift Redemption Record
+model RedemptionRecord {
+  id         String           @id @default(uuid())
+  studentId  String           @map("student_id")
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  giftId     String           @map("gift_id")
+  gift       Gift             @relation(fields: [giftId], references: [id], onDelete: Restrict)
+  giftName   String           @map("gift_name")
+  giftIcon   String           @map("gift_icon")
+  coinsSpent Int              @map("coins_spent")
+  status     RedemptionStatus @default(PENDING)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@index([status])
+  @@map("redemption_records")
+}
+
+// Audit trail for Reward History
+model RewardHistory {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentName String   @map("student_name")
+  amount      Int      // +10 or -10
+  reason      String
+  badge       String?
+  recordedBy  String   @map("recorded_by") // e.g. "Cô Kim Tiến"
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([studentId])
+  @@map("reward_histories")
+}

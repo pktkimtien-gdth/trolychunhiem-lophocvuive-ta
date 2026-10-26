@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="rainbowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="25%" stop-color="#fb923c" />
+      <stop offset="50%" stop-color="#facc15" />
+      <stop offset="75%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#1e1b4b" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Inner Soft Container -->
+  <circle cx="256" cy="256" r="200" fill="#ffffff" fill-opacity="0.1" />
+
+  <!-- Rainbow Arc -->
+  <path d="M 128 320 A 128 128 0 0 1 384 320" fill="none" stroke="url(#rainbowGrad)" stroke-width="24" stroke-linecap="round" opacity="0.9" />
+
+  <!-- Open Book & Graduation Cap Mascot -->
+  <g filter="url(#shadow)">
+    <!-- Open Book Pages -->
+    <path d="M 256 360 C 210 330 160 330 120 340 L 120 250 C 160 240 210 240 256 270 C 302 240 352 240 392 250 L 392 340 C 352 330 302 330 256 360 Z" fill="#ffffff" />
+    <path d="M 256 270 L 256 360" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+    <!-- Book Bookmark Ribbon -->
+    <path d="M 256 270 L 256 380 L 268 370 L 280 380 L 280 278" fill="#f43f5e" />
+
+    <!-- Graduation Cap / Scholar Icon -->
+    <polygon points="256,120 380,180 256,236 132,180" fill="#1e1b4b" />
+    <polygon points="256,128 360,180 256,226 152,180" fill="#312e81" />
+    <path d="M 180 206 L 180 260 C 180 290 332 290 332 260 L 332 206" fill="#1e1b4b" />
+
+    <!-- Tassel -->
+    <circle cx="256" cy="178" r="8" fill="url(#goldGrad)" />
+    <path d="M 256 178 Q 330 200 350 240" fill="none" stroke="url(#goldGrad)" stroke-width="6" stroke-linecap="round" />
+    <circle cx="350" cy="245" r="7" fill="url(#goldGrad)" />
+  </g>
+
+  <!-- Sparkle Stars -->
+  <path d="M 390 130 Q 400 145 415 150 Q 400 155 390 170 Q 380 155 365 150 Q 380 145 390 130 Z" fill="url(#goldGrad)" />
+  <path d="M 120 160 Q 128 172 140 176 Q 128 180 120 192 Q 112 180 100 176 Q 112 172 120 160 Z" fill="#fde047" opacity="0.85" />
+  <circle cx="160" cy="130" r="6" fill="#ffffff" opacity="0.7" />
+  <circle cx="360" cy="360" r="7" fill="#ffffff" opacity="0.6" />
+</svg>
